@@ -1,11 +1,16 @@
-from sklearn.model_selection import train_test_split
+import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as tf_hub
-import numpy as np
-from bert.tokenization import FullTokenizer
 import tqdm
+
+from bert.tokenization import FullTokenizer
+from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
+
+'''
+Use tensorflow 1.15 for training
+'''
 
 tf.get_logger().setLevel('ERROR')
 SEED = 42
@@ -15,13 +20,13 @@ tf.set_random_seed(SEED)
 ###########################################################
 # DATA PRE-PROCESSING
 
-df = pd.read_csv('./data/yelp.csv')
-df = df.loc[:, ['stars', 'text']]
-df['sentiment'] = [2 if star > 3 else 1 if star == 3 else 0 for star in df['stars']]
+dataset = pd.read_csv('./data/yelp.csv')
+dataset = dataset.loc[:, ['stars', 'text']]
+dataset['sentiment'] = [2 if star > 3 else 1 if star == 3 else 0 for star in dataset['stars']]
 
-print(df['stars'].value_counts())
-df['stars'] = df['stars'] - 1
-X_train, X_test, y_train, y_test = train_test_split(df['text'], df['stars'], test_size=0.1, random_state=SEED)
+print(dataset['stars'].value_counts())
+dataset['stars'] = dataset['stars'] - 1
+X_train, X_test, y_train, y_test = train_test_split(dataset['text'], dataset['stars'], test_size=0.1, random_state=SEED)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=1/9, random_state=SEED)
 
 y_train = tf.keras.utils.to_categorical(y_train)

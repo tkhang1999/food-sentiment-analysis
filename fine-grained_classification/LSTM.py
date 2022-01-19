@@ -1,11 +1,11 @@
 import gzip
-import shutil
 import os
+import shutil
 import pandas as pd
 import tensorflow as tf
 import numpy as np
-from sklearn.model_selection import train_test_split
 
+from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.layers import Dense, Embedding, LSTM, Dropout, Input, Bidirectional, GlobalMaxPool1D
 from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences 
@@ -17,7 +17,6 @@ from tensorflow.python.keras.models import Model
 Use tensorflow 1.15 for training
 '''
 
-print('Training using tensorflow version %s' % tf.__version__)
 tf.get_logger().setLevel('ERROR')
 SEED = 42
 np.random.seed(SEED)
@@ -65,7 +64,7 @@ max_tokens = int(np.mean(num_tokens)+2*np.std(num_tokens))
 
 x_train = pad_sequences(x_train_tokens, maxlen = MAX_SEQUENCE_LENGTH)
 x_val = pad_sequences(x_val_tokens, maxlen = MAX_SEQUENCE_LENGTH)
-x_test = pad_sequences(x_test_tokens, maxlen=MAX_SEQUENCE_LENGTH)
+x_test = pad_sequences(x_test_tokens, maxlen = MAX_SEQUENCE_LENGTH)
 
 ###########################################################
 
@@ -110,6 +109,6 @@ print(lstm_model.summary())
 epochs = 5
 batch_size = 128
 
-history = lstm_model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size,validation_data=(x_val, y_val),callbacks=[EarlyStopping(monitor='val_loss',patience=1, min_delta=0.0001)])
+history = lstm_model.fit(x_train,y_train,epochs=epochs,batch_size=batch_size,validation_data=(x_val, y_val),callbacks=[EarlyStopping(monitor='val_loss',patience=1, min_delta=0.0001)])
 result = lstm_model.evaluate(x_test,y_test)
 print(result)

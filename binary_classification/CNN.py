@@ -1,16 +1,16 @@
 import gzip
-import shutil
 import os
+import shutil
 import numpy as np 
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.layers import Dense, Embedding, Flatten
 from tensorflow.python.keras.layers.convolutional import Conv1D, MaxPooling1D
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.optimizers import Adam
 from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences 
-from sklearn.model_selection import train_test_split
 
 # Load embedding as a dict
 def load_embedding(filename):
@@ -40,11 +40,12 @@ def get_weight_matrix(embedding, vocab):
     return weight_matrix
 
 # Data pre-processing
-data = pd.read_csv("./data/yelp.csv")
-sentences = data['text'].values
-y = data['label'].values
+dataset = pd.read_csv('./data/yelp.csv')
+sentences = dataset['text'].values
+y = dataset['label'].values
 
-x_train,x_test,y_train,y_test = train_test_split(sentences,y,test_size=0.2,random_state=1000)
+x_train, x_test, y_train, y_test = train_test_split(dataset['text'], dataset['label'], test_size=0.1, random_state=42)
+x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=1/9, random_state=42) #0.9/9=0.1
 
 num_words=5000
 
@@ -58,13 +59,15 @@ print(vocab_size)
 
 # Prepare train and test data
 x_train_tokens = tokenizer.texts_to_sequences(x_train)
+x_val_tokens = tokenizer.texts_to_sequences(x_val)
 x_test_tokens = tokenizer.texts_to_sequences(x_test)
-num_tokens = [len(tokens) for tokens in x_train_tokens + x_test_tokens]
+num_tokens = [len(tokens) for tokens in x_train_tokens + x_val_tokens + x_test_tokens]
 num_tokens = np.array(num_tokens)
 
 max_tokens = int(np.mean(num_tokens)+2*np.std(num_tokens))
 
-x_train = pad_sequences(x_train_tokens,padding='pre',maxlen = max_tokens)
+x_train = pad_sequences(x_train_tokens,padding='pre',maxlen=max_tokens)
+x_val = pad_sequences(x_val_tokens,padding='pre',maxlen=max_tokens)
 x_test = pad_sequences(x_test_tokens,padding='pre',maxlen=max_tokens)
 
 print(y_train.shape)
@@ -81,8 +84,8 @@ print(default_model.summary())
 
 # Train and Test default model
 default_model.compile(loss='binary_crossentropy',optimizer=optimizer,metrics=['accuracy'])
-default_model.fit(x_train,y_train,epochs=3,batch_size=128)
-print("finish training")
+default_model.fit(x_train,y_train,epochs=3,batch_size=128,validation_data=(x_val, y_val))
+print('finish training default model')
 
 print(default_model.evaluate(x_test,y_test))
 
@@ -101,7 +104,7 @@ embedding_vectors = get_weight_matrix(raw_embedding, tokenizer.word_index)
 # create the embedding layer
 embedding_layer = Embedding(vocab_size, 50, weights=[embedding_vectors], input_length=max_tokens, trainable=True)
 
-# Create the default model with a Word Embedding layer using glove.6B data
+# Create the custom model with a Word Embedding layer using glove.6B data
 custom_model = Sequential()
 custom_model.add(embedding_layer)
 custom_model.add(Conv1D(filters=128, kernel_size=5, activation='relu'))
@@ -112,7 +115,7 @@ print(custom_model.summary())
 
 # Train and Test custom model
 custom_model.compile(loss='binary_crossentropy',optimizer=optimizer,metrics=['accuracy'])
-custom_model.fit(x_train,y_train,epochs=4,batch_size=128)
-print("finish training")
+custom_model.fit(x_train,y_train,epochs=4,batch_size=128,validation_data=(x_val, y_val))
+print('finish training custom model')
 
 print(custom_model.evaluate(x_test,y_test))
