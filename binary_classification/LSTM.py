@@ -1,15 +1,15 @@
 from sklearn.model_selection import train_test_split 
-from keras.models import Sequential
-from keras.layers import Dense, Embedding, LSTM
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences 
-from keras.optimizers import Adam
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers import Dense, Embedding, LSTM
+from tensorflow.python.keras.preprocessing.text import Tokenizer
+from tensorflow.python.keras.preprocessing.sequence import pad_sequences 
+from tensorflow.python.keras.optimizers import Adam
 
 import pandas as pd
 import numpy as np 
 
 # Data pre-processing
-data = pd.read_csv("../yelp.csv")
+data = pd.read_csv("./data/yelp.csv")
 sentences = data['text'].values
 y = data['label'].values
 

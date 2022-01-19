@@ -2,40 +2,26 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as tf_hub
-import time
 import numpy as np
 from bert.tokenization import FullTokenizer
 import tqdm
-from tensorflow.keras import backend as K
-import matplotlib.pyplot as plt
-import seaborn as sns
+from tensorflow.python.keras import backend as K
 
-tf.logging.set_verbosity(tf.logging.INFO)
+tf.get_logger().setLevel('ERROR')
 SEED = 42
 np.random.seed(SEED)
 tf.set_random_seed(SEED)
 
+###########################################################
 # DATA PRE-PROCESSING
 
-df = pd.read_csv('../yelp_food_review.csv')
+df = pd.read_csv('./data/yelp.csv')
 df = df.loc[:, ['stars', 'text']]
 df['sentiment'] = [2 if star > 3 else 1 if star == 3 else 0 for star in df['stars']]
 
 print(df['stars'].value_counts())
-
-# Get 10,000 sample data for faster training
-rev_1 = df[df['stars'] == 1].sample(n = 2000)
-rev_2 = df[df['stars'] == 2].sample(n = 2000)
-rev_3 = df[df['stars'] == 3].sample(n = 2000)
-rev_4 = df[df['stars'] == 4].sample(n = 2000)
-rev_5 = df[df['stars'] == 5].sample(n = 2000)
-dataset = pd.concat([rev_1, rev_2, rev_3, rev_4, rev_5]).sample(frac=1).reset_index(drop=True)
-
-# Get 700,000 dataset
-# dataset = df.sample(n = 700000).reset_index(drop=True)
-
-dataset['stars'] = dataset['stars'] - 1
-X_train, X_test, y_train, y_test = train_test_split(dataset['text'], dataset['stars'], test_size=0.1, random_state=SEED)
+df['stars'] = df['stars'] - 1
+X_train, X_test, y_train, y_test = train_test_split(df['text'], df['stars'], test_size=0.1, random_state=SEED)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=1/9, random_state=SEED)
 
 y_train = tf.keras.utils.to_categorical(y_train)
@@ -44,6 +30,7 @@ y_test = tf.keras.utils.to_categorical(y_test)
 
 print(X_train.shape, X_val.shape, X_test.shape, y_train.shape, y_val.shape, y_test.shape)
 
+###########################################################
 # BERT DATA
 
 class PaddingInputExample(object):
@@ -186,6 +173,7 @@ test_examples = convert_text_to_examples(X_test, y_test)
 print(train_input_ids.shape, val_input_ids.shape, test_input_ids.shape)
 bm = tf_hub.Module(BERT_PATH, trainable=True, name=f"bert_module")
 
+###########################################################
 # BERT MODEL
 
 class BertLayer(tf.keras.layers.Layer):
@@ -296,6 +284,7 @@ bert_model = build_model(bert_path=BERT_PATH, max_seq_length=MAX_SEQ_LENGTH, n_f
 initialize_vars(sess)
 print(bert_model.summary())
 
+###########################################################
 # TRAIN THE MODEL
 
 filepath = "saved-model-{epoch:02d}-{val_loss:.2f}.hdf5"
@@ -312,7 +301,7 @@ bert_history = bert_model.fit(
     [train_input_ids, train_input_masks, train_segment_ids], 
     train_labels,
     validation_data=([val_input_ids, val_input_masks, val_segment_ids], val_labels),
-    epochs=4,
+    epochs=2,
     batch_size=8,
     verbose=1,
 
@@ -322,34 +311,3 @@ bert_history = bert_model.fit(
 
 result = bert_model.evaluate([test_input_ids, test_input_masks, test_segment_ids], test_labels)
 print(result)
-
-# MODEL EVALUATION
-
-# test_predictions = bert_model.predict(x=[test_input_ids,
-#                                          test_input_masks,
-#                                          test_segment_ids],
-#                                       batch_size=64,
-#                                       verbose=1)
-
-# from sklearn.metrics import confusion_matrix, classification_report
-
-# test_pred_labels = []
-# for prediction in test_predictions:
-#     pred_label = [1 if pred == max(prediction) else 0 for pred in prediction]
-#     test_pred_labels.append(pred_label)
-
-# print('Classification Report:')
-# print(classification_report(y_true=test_labels, y_pred=test_pred_labels))
-
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-
-# %matplotlib inline
-
-# with tf.Session() as session:
-#     cm = tf.confusion_matrix([np.argmax(label) for label in test_labels], [np.argmax(label) for label in test_pred_labels]).eval()
-
-# LABELS = ['0', '1', '2', '3', '4']
-# sns.heatmap(cm, annot=True, xticklabels=LABELS, yticklabels=LABELS, fmt='g')
-# xl = plt.xlabel("Predicted")
-# yl = plt.ylabel("Actuals")
