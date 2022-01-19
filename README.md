@@ -1,13 +1,15 @@
 # Sentiment Analysis
  
 ## Introduction
-This project is to develop sentiment analysis models for food review using the YELP restaurant review dataset from Kaggle. There are two models: Convolutional Neural Network with Word Embedding Layer model and Long Short-Term Memory model
+This project is to develop sentiment analysis models for food review using the YELP restaurant review dataset from Kaggle. Due to file size limit on GitHub and our computational limitation, we only provide a small dataset of 10,000 reviews in this repository. For better training and testing, large Yelp dataset, available online, can be used. 
+
+* For the binary classification, we have 2 models: Convolutional Neural Network (CNN) with Word Embedding Layer and Long Short-Term Memory (LSTM)
+
+* For the fine-grained classification, we also have 2 models: Long Short-Term Memory (LSTM) with Word Embedding Layer and BERT
 
 ## How to run?
-Prepare `python 3.6` or `python 3.7`
+* Install `python 3.6` or `python 3.7`
 
-Run `pip install -r requirements.txt` to install all dependencies for this project.
+* Run `pip install -r requirements.txt` to install all dependencies for this project.
 
-Download the pre-trained word vectors from [GloVe](http://nlp.stanford.edu/data/glove.6B.zip) or access this [link](https://nlp.stanford.edu/projects/glove/) for further information. Put the pre-trained word vectors in the folder `glove.6B`.
-
-Run `python CNN.py` or `python LSTM.py` to see the results.
+* Run `python binary_classification/<model_name>.py` or `python fine-grained_classification/<model_name>.py` to see the results.

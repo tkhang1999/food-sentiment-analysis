@@ -1,14 +1,16 @@
-from keras.layers import Dense, Embedding, Flatten, LSTM
-from keras.layers.convolutional import Conv1D, MaxPooling1D
-from keras.models import Sequential
-from keras.optimizers import Adam
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences 
-from keras.wrappers.scikit_learn import KerasClassifier
-from sklearn.model_selection import train_test_split
-
+import gzip
+import shutil
+import os
 import numpy as np 
 import pandas as pd
+
+from tensorflow.python.keras.layers import Dense, Embedding, Flatten
+from tensorflow.python.keras.layers.convolutional import Conv1D, MaxPooling1D
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.optimizers import Adam
+from tensorflow.python.keras.preprocessing.text import Tokenizer
+from tensorflow.python.keras.preprocessing.sequence import pad_sequences 
+from sklearn.model_selection import train_test_split
 
 # Load embedding as a dict
 def load_embedding(filename):
@@ -29,7 +31,7 @@ def get_weight_matrix(embedding, vocab):
     # total vocabulary size plus 0 for unknown words
     vocab_size = len(vocab) + 1
     # define weight matrix dimensions with all 0
-    weight_matrix = np.zeros((vocab_size, 100))
+    weight_matrix = np.zeros((vocab_size, 50))
     # step vocab, store vectors using the Tokenizer's integer mapping
     for word, i in vocab.items():
         vector = embedding.get(word)
@@ -38,7 +40,7 @@ def get_weight_matrix(embedding, vocab):
     return weight_matrix
 
 # Data pre-processing
-data = pd.read_csv("../yelp.csv")
+data = pd.read_csv("./data/yelp.csv")
 sentences = data['text'].values
 y = data['label'].values
 
@@ -85,11 +87,19 @@ print("finish training")
 print(default_model.evaluate(x_test,y_test))
 
 # load embedding from file
-raw_embedding = load_embedding('../glove.6B/glove.6B.100d.txt')
+EMBEDDING_FILE_ZIP = './data/glove.6B.50d.txt.gz'
+EMBEDDING_FILE = './data/glove.6B.50d.txt'
+
+if not os.path.isfile(EMBEDDING_FILE):
+    print('Extracting ' + EMBEDDING_FILE_ZIP)
+    with gzip.open(EMBEDDING_FILE_ZIP, 'rb') as f_in:
+        with open(EMBEDDING_FILE, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+raw_embedding = load_embedding(EMBEDDING_FILE)
 # get vectors in the right order
 embedding_vectors = get_weight_matrix(raw_embedding, tokenizer.word_index)
 # create the embedding layer
-embedding_layer = Embedding(vocab_size, 100, weights=[embedding_vectors], input_length=max_tokens, trainable=True)
+embedding_layer = Embedding(vocab_size, 50, weights=[embedding_vectors], input_length=max_tokens, trainable=True)
 
 # Create the default model with a Word Embedding layer using glove.6B data
 custom_model = Sequential()
