@@ -27,11 +27,11 @@ def load_embedding(filename):
     return embedding
 
 # Create a weight matrix for the Embedding layer from a loaded embedding
-def get_weight_matrix(embedding, vocab):
+def get_weight_matrix(embedding, vocab, embedding_dim):
     # total vocabulary size plus 0 for unknown words
     vocab_size = len(vocab) + 1
     # define weight matrix dimensions with all 0
-    weight_matrix = np.zeros((vocab_size, 50))
+    weight_matrix = np.zeros((vocab_size, embedding_dim))
     # step vocab, store vectors using the Tokenizer's integer mapping
     for word, i in vocab.items():
         vector = embedding.get(word)
@@ -92,6 +92,7 @@ print(default_model.evaluate(x_test,y_test))
 # load embedding from file
 EMBEDDING_FILE_ZIP = './data/glove.6B.50d.txt.gz'
 EMBEDDING_FILE = './data/glove.6B.50d.txt'
+EMBEDDING_DIM = 50
 
 if not os.path.isfile(EMBEDDING_FILE):
     print('Extracting ' + EMBEDDING_FILE_ZIP)
@@ -100,7 +101,7 @@ if not os.path.isfile(EMBEDDING_FILE):
             shutil.copyfileobj(f_in, f_out)
 raw_embedding = load_embedding(EMBEDDING_FILE)
 # get vectors in the right order
-embedding_vectors = get_weight_matrix(raw_embedding, tokenizer.word_index)
+embedding_vectors = get_weight_matrix(raw_embedding, tokenizer.word_index, EMBEDDING_DIM)
 # create the embedding layer
 embedding_layer = Embedding(vocab_size, 50, weights=[embedding_vectors], input_length=max_tokens, trainable=True)
 

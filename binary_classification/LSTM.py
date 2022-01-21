@@ -1,9 +1,12 @@
+import gzip
+import os
+import shutil
 import pandas as pd
 import numpy as np 
 
 from sklearn.model_selection import train_test_split 
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Embedding, LSTM
+from tensorflow.python.keras.models import Sequential, Model
+from tensorflow.python.keras.layers import Dense, Embedding, LSTM, Dropout, Input, Bidirectional, GlobalMaxPool1D
 from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences 
 from tensorflow.python.keras.optimizers import Adam
@@ -42,16 +45,61 @@ x_test = pad_sequences(x_test_tokens,padding='pre',maxlen=max_tokens)
 print(y_train.shape)
 print(x_train.shape)
 
-# Create the model
-model = Sequential()
-model.add(Embedding(input_dim = vocab_size,output_dim=embedding_size,input_length=max_tokens))
-model.add(LSTM(100))
-model.add(Dense(1,activation='sigmoid'))
-print(model.summary())
+# Create the default model
+default_model = Sequential()
+default_model.add(Embedding(input_dim = vocab_size,output_dim=embedding_size,input_length=max_tokens))
+default_model.add(LSTM(100))
+default_model.add(Dense(1,activation='sigmoid'))
+print(default_model.summary())
 
-# Train and Test
-model.compile(loss='binary_crossentropy',optimizer=optimizer,metrics=['accuracy'])
-model.fit(x_train,y_train,epochs=3,batch_size=128,validation_data=(x_val, y_val))
-print('finish training')
-result = model.evaluate(x_test,y_test)
+# Train and Test default model
+default_model.compile(loss='binary_crossentropy',optimizer=optimizer,metrics=['accuracy'])
+default_model.fit(x_train,y_train,epochs=4,batch_size=128,validation_data=(x_val, y_val))
+print('finish training default model')
+result = default_model.evaluate(x_test,y_test)
+print(result)
+
+# load embedding from file
+EMBEDDING_FILE_ZIP = './data/glove.6B.50d.txt.gz'
+EMBEDDING_FILE = './data/glove.6B.50d.txt'
+EMBEDDING_DIM = 50
+MAX_NB_WORDS = 30000
+
+if not os.path.isfile(EMBEDDING_FILE):
+    print('Extracting ' + EMBEDDING_FILE_ZIP)
+    with gzip.open(EMBEDDING_FILE_ZIP, 'rb') as f_in:
+        with open(EMBEDDING_FILE, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+def get_coefs(word,*arr): return word, np.asarray(arr, dtype='float32')
+embeddings_index = dict(get_coefs(*o.strip().split()) for o in open(EMBEDDING_FILE, encoding='utf8'))
+
+all_embs = np.stack(embeddings_index.values())
+emb_mean,emb_std = all_embs.mean(), all_embs.std()
+emb_mean,emb_std
+
+word_index = tokenizer.word_index
+nb_words = min(MAX_NB_WORDS, len(word_index))
+embedding_matrix = np.random.normal(emb_mean, emb_std, (nb_words, EMBEDDING_DIM))
+for word, i in word_index.items():
+    if i >= MAX_NB_WORDS: continue
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None: embedding_matrix[i] = embedding_vector
+
+# Create the custom model
+inp = Input(shape=(max_tokens,))
+x = Embedding(MAX_NB_WORDS, EMBEDDING_DIM, weights=[embedding_matrix])(inp)
+x = Bidirectional(LSTM(50, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
+x = GlobalMaxPool1D()(x)
+x = Dense(50, activation='relu')(x)
+x = Dropout(0.1)(x)
+x = Dense(1, activation='sigmoid')(x)
+custom_model = Model(inputs=inp, outputs=x)
+custom_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# Train and Test custom model
+custom_model.compile(loss='binary_crossentropy',optimizer=optimizer,metrics=['accuracy'])
+custom_model.fit(x_train,y_train,epochs=5,batch_size=128,validation_data=(x_val, y_val))
+print('finish training custom model')
+result = custom_model.evaluate(x_test,y_test)
 print(result)

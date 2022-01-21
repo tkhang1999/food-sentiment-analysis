@@ -42,7 +42,7 @@ print(X_train.shape, X_val.shape, X_test.shape, y_train.shape, y_val.shape, y_te
 
 # The maximum number of words to be used. (most frequent)
 MAX_NB_WORDS = 30000
-# Max number of words in each complaint.
+# Max number of words in each review.
 MAX_SEQUENCE_LENGTH = 250
 # This is fixed.
 EMBEDDING_DIM = 50
