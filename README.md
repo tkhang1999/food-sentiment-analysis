@@ -7,6 +7,8 @@ This project is to develop sentiment analysis models for food review using the Y
 
 * For the fine-grained classification, we also have 2 models: Long Short-Term Memory (LSTM) (with GloVe embeddings) and BERT
 
+**Note**: An onlinve version of fine-grained classification models is available on [Colab](https://colab.research.google.com/drive/1Uet_vymrUp1tZVDtwMXsNPYJI2_zb0eZ?usp=sharing).
+
 ## How to run?
 * Require `python 3.6` or `python 3.7`
 
